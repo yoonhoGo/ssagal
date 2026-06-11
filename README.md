@@ -14,20 +14,33 @@ Tauri 2 + 순수 HTML/CSS/JS로 만들었습니다.
 - 🔥 **불타는 효과** — `x10` 이상 자동 반복·계속 모드이거나 10회 이상 연타하면 글자에 불
 - ⏹ **중지** — 자동 반복 중단 + 재생 중인 모든 소리 정지
 
-## 실행
+## 설치 & 실행 (npm 전역)
+
+> ⚠️ **macOS (Apple Silicon / arm64) 전용.** 빌드된 바이너리를 동봉해 배포하므로 해당 플랫폼에서만 설치·실행됩니다.
+
+```bash
+npm install -g ssagal
+ssagal                 # 말풍선 창 실행
+```
+
+## 개발
 
 사전 준비: [Node.js](https://nodejs.org), [Rust](https://rustup.rs) 툴체인.
 
 ```bash
 npm install
 npm run tauri dev      # 개발 실행 (최초엔 Rust 컴파일로 수 분 소요)
+npm test               # 단위 테스트
 ```
 
-빌드:
+빌드 / 배포 패키징:
 
 ```bash
-npm run tauri build    # 배포용 번들 생성
+npm run tauri build    # 배포용 설치 번들(.app/.dmg) 생성
+npm run build:bin      # release 바이너리를 dist-bin/ 으로 복사 (npm 동봉용)
 ```
+
+`npm publish` 시 `prepublishOnly` 훅이 `build:bin` 을 실행해 최신 바이너리를 동봉합니다.
 
 ## 테스트
 

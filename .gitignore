@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# npm 동봉용 빌드 바이너리(추적 제외)
+dist-bin/
