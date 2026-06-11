@@ -12,6 +12,7 @@ function makeFakeAudioFactory({ autoEnd = false } = {}) {
       played: false,
       paused: false,
       currentTime: 0,
+      duration: NaN, // 실제 Audio처럼 메타데이터 로드 전엔 NaN (테스트는 clipMs 주입 사용)
       addEventListener(ev, cb) {
         (listeners[ev] ||= []).push(cb);
       },
@@ -85,7 +86,7 @@ test("재생 중인 오디오가 모두 끝나면 연타 스트릭이 0으로 �
 
 test("startRepeat(3): 순차로 정확히 3회 재생하고 종료 상태가 된다", () => {
   const makeAudio = makeFakeAudioFactory({ autoEnd: true });
-  const player = createPlayer({ makeAudio, ...immediate });
+  const player = createPlayer({ makeAudio, clipMs: 1000, ...immediate });
   player.startRepeat(3);
   assert.equal(makeAudio.created.length, 3);
   const s = player.getState();
@@ -93,19 +94,21 @@ test("startRepeat(3): 순차로 정확히 3회 재생하고 종료 상태가 된
   assert.equal(s.isAutoPlaying, false);
 });
 
-test("순차 반복은 기본 딜레이가 0 이다", () => {
+test("순차 반복 기본 간격은 -100ms (다음 클립이 이전 클립 끝나기 100ms 전 시작)", () => {
   const makeAudio = makeFakeAudioFactory({ autoEnd: true });
   const gaps = [];
   const player = createPlayer({
     makeAudio,
+    clipMs: 1000, // 클립 길이 1000ms 가정
     setTimeout: (cb, ms) => {
       gaps.push(ms);
       cb();
     },
   });
   player.startRepeat(3);
-  // 반복 사이 딜레이로 예약된 모든 타이머는 0ms 여야 한다
-  assert.ok(gaps.every((ms) => ms === 0));
+  // 다음 클립 시작 간격 = max(0, 1000 + (-100)) = 900ms
+  assert.ok(gaps.length >= 1);
+  assert.ok(gaps.every((ms) => ms === 900));
 });
 
 test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", () => {
@@ -128,11 +131,12 @@ test("onChange 는 startRepeat 진행에 따라 호출된다", () => {
   const states = [];
   const player = createPlayer({
     makeAudio,
+    clipMs: 1000,
     ...immediate,
     onChange: (s) => states.push(s),
   });
   player.startRepeat(2);
-  // 시작(0/2) + 각 재생 종료(1/2, 2/2) 최소 3회 이상 호출
+  // 시작 + 각 재생 종료 등 여러 번 호출
   assert.ok(states.length >= 3);
   assert.equal(states[states.length - 1].remaining, 0);
 });

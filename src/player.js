@@ -3,7 +3,8 @@
 // 연타 시 매번 새 Audio 인스턴스를 만들어 중첩 재생한다.
 export function createPlayer(options = {}) {
   const src = options.src ?? "/assets/ssyagal.m4a";
-  const gapMs = options.gapMs ?? 0; // 순차 반복 사이 기본 딜레이 없음
+  // 순차 반복 사이 간격(ms). 음수면 클립이 끝나기 전에 다음 클립이 겹쳐 시작한다.
+  const gapMs = options.gapMs ?? -100;
   const makeAudio = options.makeAudio ?? ((s) => new Audio(s));
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
@@ -13,6 +14,7 @@ export function createPlayer(options = {}) {
   let remaining = 0;
   let total = 0;
   let streak = 0; // 연속 연타 횟수 (재생 중인 소리가 모두 끝나면 0으로 리셋)
+  let knownClipMs = options.clipMs ?? null; // 클립 길이 캐시(런타임에 audio.duration으로 학습)
 
   function snapshot() {
     return { isAutoPlaying, remaining, total, activeCount: active.size, streak };
@@ -58,28 +60,61 @@ export function createPlayer(options = {}) {
     emit();
   }
 
-  function playNext() {
-    if (!isAutoPlaying || remaining <= 0) {
-      finish();
+  // 다음 클립을 "현재 클립 시작 + (클립길이 + gapMs)" 시점에 예약한다.
+  // gapMs 가 음수면 이전 클립이 끝나기 전에 겹쳐 시작된다.
+  function scheduleNext(audio, launch) {
+    const fire = () => {
+      const durMs = knownClipMs ?? 0;
+      setTimeoutFn(() => {
+        if (isAutoPlaying) launch();
+      }, Math.max(0, durMs + gapMs));
+    };
+    if (knownClipMs != null) {
+      fire();
       return;
     }
-    spawn(() => {
-      remaining -= 1;
-      if (isAutoPlaying && remaining > 0) {
-        emit();
-        setTimeoutFn(playNext, gapMs);
-      } else {
-        finish();
-      }
-    });
-    emit();
+    // 클립 길이를 아직 모르면 메타데이터에서 학습 후 예약.
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      knownClipMs = audio.duration * 1000;
+      fire();
+    } else {
+      audio.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            knownClipMs = audio.duration * 1000;
+          }
+          fire();
+        },
+        { once: true },
+      );
+    }
   }
 
   function startRepeat(n) {
     isAutoPlaying = true;
     total = n;
     remaining = n;
-    playNext();
+    let launched = 0;
+
+    const launch = () => {
+      if (!isAutoPlaying || launched >= n) return;
+      launched += 1;
+      const audio = spawn(() => {
+        remaining -= 1;
+        if (remaining <= 0 || !isAutoPlaying) {
+          finish();
+        } else {
+          emit();
+        }
+      });
+      emit();
+      if (launched < n) {
+        scheduleNext(audio, launch);
+      }
+    };
+
+    launch();
   }
 
   function stop() {
