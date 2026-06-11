@@ -2,9 +2,10 @@
 // makeAudio(기본 (src) => new Audio(src))와 타이머를 주입받아 테스트 가능하게 한다.
 // 연타 시 매번 새 Audio 인스턴스를 만들어 중첩 재생한다.
 export function createPlayer(options = {}) {
-  const src = options.src ?? "/assets/ssyagal.m4a";
+  const defaultSrc = "/assets/ssyagal.m4a";
+  let src = options.src ?? defaultSrc;
   // 순차 반복 사이 간격(ms). 음수면 클립이 끝나기 전에 다음 클립이 겹쳐 시작한다.
-  const gapMs = options.gapMs ?? -200;
+  let gapMs = options.gapMs ?? -200;
   const makeAudio = options.makeAudio ?? ((s) => new Audio(s));
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
@@ -144,6 +145,18 @@ export function createPlayer(options = {}) {
     startRepeat(Infinity);
   }
 
+  // 음원 경로를 런타임에 교체한다(설정에서 사운드 변경). 다음 spawn 부터 적용된다.
+  // 클립 길이는 음원마다 다르므로 캐시를 비워 새로 학습하게 한다.
+  function setSrc(newSrc) {
+    src = newSrc ?? defaultSrc;
+    knownClipMs = null;
+  }
+
+  // 순차 반복 간격(ms)을 런타임에 바꾼다. 유효하지 않은 값은 무시한다.
+  function setGap(ms) {
+    if (Number.isFinite(ms)) gapMs = ms;
+  }
+
   function stop() {
     isAutoPlaying = false;
     isContinuous = false;
@@ -163,6 +176,8 @@ export function createPlayer(options = {}) {
     startRepeat,
     startContinuous,
     stop,
+    setSrc,
+    setGap,
     getState: snapshot,
   };
 }

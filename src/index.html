@@ -9,7 +9,9 @@
   </head>
   <body>
     <div class="stage" data-tauri-drag-region>
+      <button class="gear" id="settings-btn" aria-label="설정">⚙</button>
       <button class="bubble" id="ssyagal-btn" aria-label="쌰갈">
+        <img class="bubble__img" id="bubble-img" alt="" hidden />
         <span class="bubble__text">쌰갈!</span>
       </button>
       <div class="controls">
@@ -20,6 +22,51 @@
         <button class="pill pill--stop" id="stop-btn">■ 중지</button>
       </div>
       <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="settings" id="settings-panel" hidden>
+      <div class="settings__card">
+        <div class="settings__head">
+          <span class="settings__title">설정</span>
+          <button class="settings__close" id="settings-close" aria-label="닫기">✕</button>
+        </div>
+
+        <div class="field">
+          <span class="field__label">이미지</span>
+          <div class="field__row">
+            <label class="file-btn">
+              선택
+              <input type="file" id="set-image" accept="image/*" hidden />
+            </label>
+            <button class="mini" id="set-image-clear">기본값</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field__label">사운드</span>
+          <div class="field__row">
+            <label class="file-btn">
+              선택
+              <input type="file" id="set-sound" accept="audio/*" hidden />
+            </label>
+            <button class="mini" id="set-sound-clear">기본값</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field__label">딜레이 <output id="set-gap-out"></output></span>
+          <input type="range" id="set-gap" min="-600" max="600" step="50" />
+        </div>
+
+        <div class="field">
+          <span class="field__label">효과</span>
+          <select id="set-effect">
+            <option value="fire">🔥 불꽃</option>
+            <option value="rainbow">🌈 무지개</option>
+            <option value="none">없음</option>
+          </select>
+        </div>
+      </div>
     </div>
   </body>
 </html>
