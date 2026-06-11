@@ -1,4 +1,5 @@
 import { createPlayer } from "./player.js";
+import { bindShortcuts } from "./shortcuts.js";
 
 const progressEl = document.getElementById("progress");
 const bubbleText = document.querySelector(".bubble__text");
@@ -44,3 +45,6 @@ document.getElementById("loop-btn").addEventListener("click", () => {
 document.getElementById("stop-btn").addEventListener("click", () => {
   player.stop();
 });
+
+// 키보드 단축키: Space/Enter=실행, 3/5/0=x3/x5/x10, R=계속, Esc/S=정지.
+bindShortcuts(player);
