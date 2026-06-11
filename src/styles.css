@@ -154,6 +154,11 @@ body {
   animation: text-fire 0.4s infinite alternate;
 }
 
+/* 불타는 중에도 클릭 시 글씨 두 배 팝이 함께 적용된다 */
+.burning .bubble__text.pop {
+  animation: text-fire 0.4s infinite alternate, pop 0.22s ease;
+}
+
 @keyframes text-fire {
   0% {
     text-shadow: 0 0 4px #fff3b0, 0 -2px 6px #ffd000, 0 -4px 12px #ff8a00,
