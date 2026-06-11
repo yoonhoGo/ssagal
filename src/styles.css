@@ -64,7 +64,7 @@ body {
   bottom: -22px;
   width: 30px;
   height: 30px;
-  background: var(--paper);
+  background: transparent;
   border-left: 7px solid var(--ink);
   border-bottom: 7px solid var(--ink);
   border-bottom-left-radius: 10px;
