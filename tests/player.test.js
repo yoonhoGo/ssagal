@@ -94,7 +94,7 @@ test("startRepeat(3): 순차로 정확히 3회 재생하고 종료 상태가 된
   assert.equal(s.isAutoPlaying, false);
 });
 
-test("순차 반복 기본 간격은 -100ms (다음 클립이 이전 클립 끝나기 100ms 전 시작)", () => {
+test("순차 반복 기본 간격은 -200ms (다음 클립이 이전 클립 끝나기 200ms 전 시작)", () => {
   const makeAudio = makeFakeAudioFactory({ autoEnd: true });
   const gaps = [];
   const player = createPlayer({
@@ -106,9 +106,26 @@ test("순차 반복 기본 간격은 -100ms (다음 클립이 이전 클립 끝�
     },
   });
   player.startRepeat(3);
-  // 다음 클립 시작 간격 = max(0, 1000 + (-100)) = 900ms
+  // 다음 클립 시작 간격 = max(0, 1000 + (-200)) = 800ms
   assert.ok(gaps.length >= 1);
-  assert.ok(gaps.every((ms) => ms === 900));
+  assert.ok(gaps.every((ms) => ms === 800));
+});
+
+test("onPlay 는 재생할 때마다 호출된다(연타·자동반복 공통)", () => {
+  const makeAudio = makeFakeAudioFactory({ autoEnd: true });
+  let plays = 0;
+  const player = createPlayer({
+    makeAudio,
+    clipMs: 1000,
+    ...immediate,
+    onPlay: () => {
+      plays += 1;
+    },
+  });
+  player.playOnce();
+  assert.equal(plays, 1);
+  player.startRepeat(3);
+  assert.equal(plays, 4); // 1 + 3
 });
 
 test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", () => {

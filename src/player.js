@@ -4,10 +4,11 @@
 export function createPlayer(options = {}) {
   const src = options.src ?? "/assets/ssyagal.m4a";
   // 순차 반복 사이 간격(ms). 음수면 클립이 끝나기 전에 다음 클립이 겹쳐 시작한다.
-  const gapMs = options.gapMs ?? -100;
+  const gapMs = options.gapMs ?? -200;
   const makeAudio = options.makeAudio ?? ((s) => new Audio(s));
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
+  const onPlay = options.onPlay ?? (() => {}); // 재생을 시작할 때마다 호출(연타·자동반복 공통)
 
   const active = new Set(); // 현재 재생 중인 Audio (stop 시 일괄 정지용)
   let isAutoPlaying = false;
@@ -52,6 +53,7 @@ export function createPlayer(options = {}) {
       emit();
     });
     audio.play();
+    onPlay();
     return audio;
   }
 

@@ -6,6 +6,7 @@ const progressEl = document.getElementById("progress");
 const bubbleText = document.querySelector(".bubble__text");
 
 const player = createPlayer({
+  onPlay: () => popText(), // 연타·x10·계속 등 모든 재생 시점에 글씨 팝
   onChange: (state) => {
     if (state.isContinuous) {
       progressEl.textContent = "∞";
@@ -36,7 +37,6 @@ function popText() {
 
 document.getElementById("ssyagal-btn").addEventListener("click", () => {
   player.playOnce();
-  popText();
 });
 
 document.querySelectorAll(".pill[data-times]").forEach((btn) => {
