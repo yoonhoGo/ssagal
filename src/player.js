@@ -3,71 +3,90 @@
 // 연타 시 매번 새 Audio 인스턴스를 만들어 중첩 재생한다.
 export function createPlayer(options = {}) {
   const src = options.src ?? "/assets/ssyagal.m4a";
-  const gapMs = options.gapMs ?? 300;
+  const gapMs = options.gapMs ?? 0; // 순차 반복 사이 기본 딜레이 없음
   const makeAudio = options.makeAudio ?? ((s) => new Audio(s));
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
 
-  const state = { isAutoPlaying: false, remaining: 0, total: 0 };
   const active = new Set(); // 현재 재생 중인 Audio (stop 시 일괄 정지용)
+  let isAutoPlaying = false;
+  let remaining = 0;
+  let total = 0;
+  let streak = 0; // 연속 연타 횟수 (재생 중인 소리가 모두 끝나면 0으로 리셋)
+
+  function snapshot() {
+    return { isAutoPlaying, remaining, total, activeCount: active.size, streak };
+  }
 
   function emit() {
-    onChange({ ...state });
+    onChange(snapshot());
+  }
+
+  function remove(audio) {
+    if (active.delete(audio) && active.size === 0) {
+      streak = 0; // 모든 소리가 꺼지면 연타 스트릭 리셋
+    }
   }
 
   // 새 오디오 인스턴스를 만들어 재생한다. onEnded는 재생 종료 시 1회 호출.
   function spawn(onEnded) {
     const audio = makeAudio(src);
     active.add(audio);
-    const cleanup = () => active.delete(audio);
     audio.addEventListener("ended", () => {
-      cleanup();
+      remove(audio);
       if (onEnded) onEnded();
+      else emit();
     });
-    audio.addEventListener("error", cleanup);
+    audio.addEventListener("error", () => {
+      remove(audio);
+      emit();
+    });
     audio.play();
     return audio;
   }
 
   // 연타 대응: 다른 소리를 멈추지 않고 새 인스턴스를 띄워 중첩 재생.
   function playOnce() {
+    streak += 1;
     spawn(null);
+    emit();
   }
 
   function finish() {
-    state.isAutoPlaying = false;
-    state.remaining = 0;
+    isAutoPlaying = false;
+    remaining = 0;
     emit();
   }
 
   function playNext() {
-    if (!state.isAutoPlaying || state.remaining <= 0) {
+    if (!isAutoPlaying || remaining <= 0) {
       finish();
       return;
     }
     spawn(() => {
-      state.remaining -= 1;
-      emit();
-      if (state.isAutoPlaying && state.remaining > 0) {
+      remaining -= 1;
+      if (isAutoPlaying && remaining > 0) {
+        emit();
         setTimeoutFn(playNext, gapMs);
       } else {
         finish();
       }
     });
+    emit();
   }
 
   function startRepeat(n) {
-    state.isAutoPlaying = true;
-    state.total = n;
-    state.remaining = n;
-    emit();
+    isAutoPlaying = true;
+    total = n;
+    remaining = n;
     playNext();
   }
 
   function stop() {
-    state.isAutoPlaying = false;
-    state.remaining = 0;
-    state.total = 0;
+    isAutoPlaying = false;
+    remaining = 0;
+    total = 0;
+    streak = 0;
     for (const audio of active) {
       audio.pause();
       audio.currentTime = 0;
@@ -80,6 +99,6 @@ export function createPlayer(options = {}) {
     playOnce,
     startRepeat,
     stop,
-    getState: () => ({ ...state }),
+    getState: snapshot,
   };
 }

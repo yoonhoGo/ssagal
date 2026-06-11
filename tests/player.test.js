@@ -62,6 +62,27 @@ test("연타: playOnce 를 두 번 호출하면 중첩 재생한다(이전 소�
   assert.equal(makeAudio.created[0].paused, false);
 });
 
+test("연타 스트릭과 activeCount 를 추적한다", () => {
+  const makeAudio = makeFakeAudioFactory(); // 재생 유지
+  const player = createPlayer({ makeAudio });
+  player.playOnce();
+  player.playOnce();
+  const s = player.getState();
+  assert.equal(s.streak, 2);
+  assert.equal(s.activeCount, 2);
+});
+
+test("재생 중인 오디오가 모두 끝나면 연타 스트릭이 0으로 리셋된다", () => {
+  const makeAudio = makeFakeAudioFactory();
+  const player = createPlayer({ makeAudio });
+  player.playOnce();
+  player.playOnce();
+  makeAudio.created.forEach((a) => a.fire("ended"));
+  const s = player.getState();
+  assert.equal(s.activeCount, 0);
+  assert.equal(s.streak, 0);
+});
+
 test("startRepeat(3): 순차로 정확히 3회 재생하고 종료 상태가 된다", () => {
   const makeAudio = makeFakeAudioFactory({ autoEnd: true });
   const player = createPlayer({ makeAudio, ...immediate });
@@ -70,6 +91,21 @@ test("startRepeat(3): 순차로 정확히 3회 재생하고 종료 상태가 된
   const s = player.getState();
   assert.equal(s.remaining, 0);
   assert.equal(s.isAutoPlaying, false);
+});
+
+test("순차 반복은 기본 딜레이가 0 이다", () => {
+  const makeAudio = makeFakeAudioFactory({ autoEnd: true });
+  const gaps = [];
+  const player = createPlayer({
+    makeAudio,
+    setTimeout: (cb, ms) => {
+      gaps.push(ms);
+      cb();
+    },
+  });
+  player.startRepeat(3);
+  // 반복 사이 딜레이로 예약된 모든 타이머는 0ms 여야 한다
+  assert.ok(gaps.every((ms) => ms === 0));
 });
 
 test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", () => {
@@ -83,6 +119,8 @@ test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", 
   assert.equal(s.isAutoPlaying, false);
   assert.equal(s.remaining, 0);
   assert.equal(s.total, 0);
+  assert.equal(s.activeCount, 0);
+  assert.equal(s.streak, 0);
 });
 
 test("onChange 는 startRepeat 진행에 따라 호출된다", () => {
