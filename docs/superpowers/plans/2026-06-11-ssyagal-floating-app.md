@@ -1,8 +1,8 @@
-# "싸갈!" 플로팅 앱 Implementation Plan
+# "쌰갈!" 플로팅 앱 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 화면에 항상 떠 있는 말풍선 "싸갈!" 버튼을 누르면 "쌰~갈~!" 음성이 나오고, x3/x5/x10 프리셋으로 자동 반복하고 중지할 수 있는 Tauri 데스크톱 앱을 만든다.
+**Goal:** 화면에 항상 떠 있는 말풍선 "쌰갈!" 버튼을 누르면 "쌰~갈~!" 음성이 나오고, x3/x5/x10 프리셋으로 자동 반복하고 중지할 수 있는 Tauri 데스크톱 앱을 만든다.
 
 **Architecture:** Tauri 2.x 단일 윈도우 앱. 프론트엔드는 순수 정적 HTML/CSS/JS(빌드 단계 없음). TTS와 자동 반복은 전적으로 프론트엔드 `speechSynthesis`로 처리하며, 상태 머신 로직(`speak.js`)은 DOM/Web Speech에 의존하지 않게 분리해 단위 테스트한다. Rust 백엔드는 윈도우 설정(프레임리스·투명·always-on-top)만 담당한다.
 
@@ -113,7 +113,7 @@ git commit -m "chore: scaffold Tauri vanilla app"
     "windows": [
       {
         "label": "main",
-        "title": "싸갈",
+        "title": "쌰갈",
         "width": 240,
         "height": 280,
         "resizable": false,
@@ -203,13 +203,13 @@ Expected: `TrueType Font data` 출력(다운로드 성공).
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>싸갈</title>
+    <title>쌰갈</title>
     <script type="module" src="/main.js" defer></script>
   </head>
   <body>
     <div class="stage" data-tauri-drag-region>
-      <button class="bubble" id="ssyagal-btn" aria-label="싸갈">
-        <span class="bubble__text">싸갈!</span>
+      <button class="bubble" id="ssyagal-btn" aria-label="쌰갈">
+        <span class="bubble__text">쌰갈!</span>
       </button>
       <div class="controls">
         <button class="pill" data-times="3">x3</button>
@@ -365,7 +365,7 @@ Run:
 ```bash
 cd ~/workspace/ssyagal && npm run tauri dev
 ```
-Expected: 투명 배경 위에 **흰 말풍선 + 굵은 검정 테두리 + 좌하단 꼬리 + 검정 그림자**가 뜨고, 안에 Jua 폰트로 "싸갈!"이 보인다. 아래에 `x3 x5 x10 ■ 중지` pill이 보인다. (이 시점엔 `main.js`가 아직 없어 콘솔에 404가 날 수 있고 소리는 나지 않음 — 정상.) 꼬리/그림자 위치가 어색하면 픽셀 값을 미세 조정. 확인 후 `Ctrl+C`.
+Expected: 투명 배경 위에 **흰 말풍선 + 굵은 검정 테두리 + 좌하단 꼬리 + 검정 그림자**가 뜨고, 안에 Jua 폰트로 "쌰갈!"이 보인다. 아래에 `x3 x5 x10 ■ 중지` pill이 보인다. (이 시점엔 `main.js`가 아직 없어 콘솔에 404가 날 수 있고 소리는 나지 않음 — 정상.) 꼬리/그림자 위치가 어색하면 픽셀 값을 미세 조정. 확인 후 `Ctrl+C`.
 
 - [ ] **Step 5: 커밋**
 
@@ -698,7 +698,7 @@ cd ~/workspace/ssyagal && npm run tauri dev
 - [ ] **Step 2: 수동 검증 체크리스트**
 
 다음을 직접 확인한다(스피커/음량 켜둘 것):
-- [ ] 타이틀바 없는 투명 창에 말풍선 "싸갈!" 버튼이 떠 있고 항상 다른 창 위에 있다.
+- [ ] 타이틀바 없는 투명 창에 말풍선 "쌰갈!" 버튼이 떠 있고 항상 다른 창 위에 있다.
 - [ ] 말풍선 버튼 클릭 → "쌰~갈~!" 음성이 1회 재생된다.
 - [ ] 빠르게 연타 → 직전 발화를 끊고 매번 새로 재생된다.
 - [ ] `x3` 클릭 → 3회 자동 반복, 진행 표시가 `0 / 3 → 1 / 3 → 2 / 3` 식으로 갱신된다.
