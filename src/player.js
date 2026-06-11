@@ -9,6 +9,7 @@ export function createPlayer(options = {}) {
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
   const onPlay = options.onPlay ?? (() => {}); // 재생을 시작할 때마다 호출(연타·자동반복 공통)
+  const hotThreshold = options.hotThreshold ?? 10; // 불타는 효과 임계값
 
   const active = new Set(); // 현재 재생 중인 Audio (stop 시 일괄 정지용)
   let isAutoPlaying = false;
@@ -19,13 +20,20 @@ export function createPlayer(options = {}) {
   let knownClipMs = options.clipMs ?? null; // 클립 길이 캐시(런타임에 audio.duration으로 학습)
 
   function snapshot() {
+    const activeCount = active.size;
+    // "불타는" 상태: 계속 모드 || hotThreshold 이상 자동 반복 중 || hotThreshold 이상 연타하고 재생 중
+    const isHot =
+      isContinuous ||
+      (isAutoPlaying && total >= hotThreshold) ||
+      (streak >= hotThreshold && activeCount > 0);
     return {
       isAutoPlaying,
       remaining,
       total,
-      activeCount: active.size,
+      activeCount,
       streak,
       isContinuous,
+      isHot,
     };
   }
 
@@ -40,18 +48,27 @@ export function createPlayer(options = {}) {
   }
 
   // 새 오디오 인스턴스를 만들어 재생한다. onEnded는 재생 종료 시 1회 호출.
+  // ended/error 는 인스턴스당 최대 1회만 발생하므로 once 로 자동 정리한다.
   function spawn(onEnded) {
     const audio = makeAudio(src);
     active.add(audio);
-    audio.addEventListener("ended", () => {
-      remove(audio);
-      if (onEnded) onEnded();
-      else emit();
-    });
-    audio.addEventListener("error", () => {
-      remove(audio);
-      emit();
-    });
+    audio.addEventListener(
+      "ended",
+      () => {
+        remove(audio);
+        if (onEnded) onEnded();
+        else emit();
+      },
+      { once: true },
+    );
+    audio.addEventListener(
+      "error",
+      () => {
+        remove(audio);
+        emit();
+      },
+      { once: true },
+    );
     audio.play();
     onPlay();
     return audio;
@@ -71,34 +88,27 @@ export function createPlayer(options = {}) {
     emit();
   }
 
+  // 아직 모르면 audio.duration 으로 클립 길이를 학습(캐시)한다.
+  function learnClip(audio) {
+    if (knownClipMs == null && Number.isFinite(audio.duration) && audio.duration > 0) {
+      knownClipMs = audio.duration * 1000;
+    }
+  }
+
   // 다음 클립을 "현재 클립 시작 + (클립길이 + gapMs)" 시점에 예약한다.
   // gapMs 가 음수면 이전 클립이 끝나기 전에 겹쳐 시작된다.
   function scheduleNext(audio, launch) {
     const fire = () => {
-      const durMs = knownClipMs ?? 0;
+      learnClip(audio);
       setTimeoutFn(() => {
         if (isAutoPlaying) launch();
-      }, Math.max(0, durMs + gapMs));
+      }, Math.max(0, (knownClipMs ?? 0) + gapMs));
     };
-    if (knownClipMs != null) {
-      fire();
-      return;
-    }
-    // 클립 길이를 아직 모르면 메타데이터에서 학습 후 예약.
-    if (Number.isFinite(audio.duration) && audio.duration > 0) {
-      knownClipMs = audio.duration * 1000;
+    // 클립 길이를 이미 알거나 지금 알 수 있으면 즉시 예약, 아니면 메타데이터 로드 후 예약.
+    if (knownClipMs != null || (Number.isFinite(audio.duration) && audio.duration > 0)) {
       fire();
     } else {
-      audio.addEventListener(
-        "loadedmetadata",
-        () => {
-          if (Number.isFinite(audio.duration) && audio.duration > 0) {
-            knownClipMs = audio.duration * 1000;
-          }
-          fire();
-        },
-        { once: true },
-      );
+      audio.addEventListener("loadedmetadata", fire, { once: true });
     }
   }
 

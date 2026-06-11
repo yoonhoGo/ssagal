@@ -128,6 +128,42 @@ test("onPlay 는 재생할 때마다 호출된다(연타·자동반복 공통)",
   assert.equal(plays, 4); // 1 + 3
 });
 
+test("isHot: x10 자동 반복은 true, x3 은 false", () => {
+  const noTimer = { setTimeout: () => {} }; // 다음 클립 예약을 진행하지 않음
+  const p3 = createPlayer({
+    makeAudio: makeFakeAudioFactory(),
+    clipMs: 1000,
+    ...noTimer,
+  });
+  p3.startRepeat(3);
+  assert.equal(p3.getState().isHot, false);
+
+  const p10 = createPlayer({
+    makeAudio: makeFakeAudioFactory(),
+    clipMs: 1000,
+    ...noTimer,
+  });
+  p10.startRepeat(10);
+  assert.equal(p10.getState().isHot, true);
+});
+
+test("isHot: 계속 모드는 true", () => {
+  const p = createPlayer({
+    makeAudio: makeFakeAudioFactory(),
+    clipMs: 1000,
+    setTimeout: () => {},
+  });
+  p.startContinuous();
+  assert.equal(p.getState().isHot, true);
+});
+
+test("isHot: 10회 이상 연타하고 재생 중이면 true", () => {
+  const makeAudio = makeFakeAudioFactory(); // 재생 유지
+  const player = createPlayer({ makeAudio });
+  for (let i = 0; i < 10; i += 1) player.playOnce();
+  assert.equal(player.getState().isHot, true);
+});
+
 test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", () => {
   const makeAudio = makeFakeAudioFactory(); // 재생 유지
   const player = createPlayer({ makeAudio });

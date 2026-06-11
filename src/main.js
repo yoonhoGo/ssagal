@@ -1,7 +1,5 @@
 import { createPlayer } from "./player.js";
 
-const FIRE_THRESHOLD = 10; // 이만큼 연타하면 불타는 효과
-
 const progressEl = document.getElementById("progress");
 const bubbleText = document.querySelector(".bubble__text");
 
@@ -16,15 +14,8 @@ const player = createPlayer({
     } else {
       progressEl.textContent = "";
     }
-    // 불타는 효과:
-    //  - '계속' 모드면 중지 전까지 항상
-    //  - x10 이상 자동 반복이면 재생 동안 (직접 연타 없이도)
-    //  - 수동으로 10회 이상 연타하고 소리가 재생 중일 때
-    const burning =
-      state.isContinuous ||
-      (state.isAutoPlaying && state.total >= FIRE_THRESHOLD) ||
-      (state.streak >= FIRE_THRESHOLD && state.activeCount > 0);
-    document.body.classList.toggle("burning", burning);
+    // 불타는 효과 여부는 player 가 판단(isHot) — UI 는 그대로 반영만.
+    document.body.classList.toggle("burning", state.isHot);
   },
 });
 
