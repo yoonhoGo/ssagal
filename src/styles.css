@@ -151,31 +151,37 @@ body {
 
 /* ===== 10연타 불타는 효과: 첨부 이미지 바운스 ===== */
 
+/* 말풍선 안쪽에 위치하는 불 이미지 */
 .fire-overlay {
-  position: fixed;
+  position: absolute;
   left: 50%;
   top: 50%;
-  width: 96%;
-  max-width: 240px;
+  width: 86%; /* 말풍선 안에 들어오도록 */
   height: auto;
   transform: translate(-50%, -50%);
   pointer-events: none; /* 클릭을 가리지 않음(계속 연타 가능) */
   display: none;
-  z-index: 100;
-  filter: drop-shadow(0 0 6px rgba(255, 120, 0, 0.6));
+  z-index: 5;
+  filter: drop-shadow(0 0 4px rgba(255, 120, 0, 0.6));
 }
 
 .burning .fire-overlay {
   display: block;
-  animation: fire-bounce 0.55s ease-in-out infinite;
+  animation: fire-bounce 0.5s ease-in-out infinite;
 }
 
+/* 불탈 때 평소 글씨는 숨겨 불 이미지가 글자를 대신한다 */
+.burning .bubble__text {
+  opacity: 0;
+}
+
+/* 말풍선 안에 머무는 작은 바운스 */
 @keyframes fire-bounce {
   0%,
   100% {
-    transform: translate(-50%, -42%) scale(1);
+    transform: translate(-50%, -44%) scale(1);
   }
   50% {
-    transform: translate(-50%, -58%) scale(1.08);
+    transform: translate(-50%, -56%) scale(1.05);
   }
 }
