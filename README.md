@@ -13,6 +13,7 @@ Tauri 2 + 순수 HTML/CSS/JS로 만들었습니다.
 - ♾️ **계속** — 중지 전까지 무한 재생
 - 🔥 **불타는 효과** — `x10` 이상 자동 반복·계속 모드이거나 10회 이상 연타하면 글자에 불
 - ⏹ **중지** — 자동 반복 중단 + 재생 중인 모든 소리 정지
+- 🧭 **메뉴바(트레이) 아이콘** — macOS 메뉴바에 상주하며, 클릭하면 **보이기/숨기기** 토글과 **종료** 메뉴 제공 (프레임 없는 창을 숨겼다가 다시 부를 수 있음)
 
 ## 설치 & 실행 (npm 전역)
 
@@ -59,7 +60,7 @@ src/
   player.js      음원 재생 + 자동 반복 상태 머신 (순수 로직, DOM 비의존)
   main.js        DOM 이벤트 → player 연결, 진행/불 효과 반영
   assets/        ssyagal.m4a(음원), Jua-Regular.ttf(폰트)
-src-tauri/       Tauri(Rust) — 프레임리스·투명·always-on-top 윈도우 설정
+src-tauri/       Tauri(Rust) — 프레임리스·투명·always-on-top 윈도우 + 메뉴바(트레이) 아이콘·보이기/숨기기
 tests/           player.js 단위 테스트
 ```
 
