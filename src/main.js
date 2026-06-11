@@ -27,9 +27,19 @@ function popText() {
   bubbleText.classList.add("pop");
 }
 
-document.getElementById("ssyagal-btn").addEventListener("click", () => {
+const bubbleBtn = document.getElementById("ssyagal-btn");
+
+bubbleBtn.addEventListener("click", () => {
   player.playOnce();
   popText();
+});
+
+// 불 이미지 바운스: 마우스를 누르면 위로, 떼면 아래로.
+bubbleBtn.addEventListener("mousedown", () => {
+  document.body.classList.add("pressing");
+});
+window.addEventListener("mouseup", () => {
+  document.body.classList.remove("pressing");
 });
 
 document.querySelectorAll(".pill[data-times]").forEach((btn) => {
