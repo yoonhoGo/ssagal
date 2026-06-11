@@ -3147,7 +3147,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ssyagalapp"
+name = "ssagal"
 version = "0.1.0"
 dependencies = [
  "serde",
