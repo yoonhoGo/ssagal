@@ -1,0 +1,57 @@
+# v* 태그 푸시 시: 테스트 → 바이너리 빌드 → npm publish → GitHub Release 생성.
+# npm 인증은 Trusted Publishing(OIDC) 사용 — npmjs.com 패키지 설정에서
+# GitHub Actions(yoonhoGo/ssagal, release.yml)를 Trusted Publisher로 등록해야 함.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # GitHub Release 생성
+  id-token: write # npm Trusted Publishing (OIDC)
+
+jobs:
+  release:
+    # macOS arm64 전용 패키지이므로 Apple Silicon 러너 사용
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # Trusted Publishing은 npm >= 11.5 필요 (node 22 동봉 npm은 10.x)
+      - run: npm install -g npm@latest
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: 태그와 package.json 버전 일치 검증
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "태그($TAG_VERSION)와 package.json($PKG_VERSION) 버전이 다릅니다." >&2
+            exit 1
+          fi
+
+      - run: npm test
+
+      # prepublishOnly가 cargo release 빌드 + dist-bin 패키징을 수행
+      - run: npm publish
+
+      - name: GitHub Release 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          npm pack
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            ssagal-*.tgz
