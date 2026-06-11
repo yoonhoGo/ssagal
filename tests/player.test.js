@@ -126,6 +126,36 @@ test("stop(): 재생 중인 모든 소리를 멈추고 상태를 리셋한다", 
   assert.equal(s.streak, 0);
 });
 
+test("startContinuous: 중지 전까지 계속 재생하며 isContinuous=true", () => {
+  const makeAudio = makeFakeAudioFactory(); // autoEnd=false → ended 안 됨
+  const timers = []; // 예약된 다음-클립 타이머를 수동으로 진행
+  const player = createPlayer({
+    makeAudio,
+    clipMs: 1000,
+    setTimeout: (cb) => timers.push(cb),
+  });
+  player.startContinuous();
+  assert.equal(makeAudio.created.length, 1);
+  let s = player.getState();
+  assert.equal(s.isContinuous, true);
+  assert.equal(s.isAutoPlaying, true);
+
+  // 예약 타이머를 진행시키면 다음 클립이 계속 재생된다
+  timers.shift()();
+  assert.equal(makeAudio.created.length, 2);
+  timers.shift()();
+  assert.equal(makeAudio.created.length, 3);
+
+  // 중지하면 더 이상 늘지 않는다
+  player.stop();
+  const count = makeAudio.created.length;
+  while (timers.length) timers.shift()();
+  assert.equal(makeAudio.created.length, count);
+  s = player.getState();
+  assert.equal(s.isContinuous, false);
+  assert.equal(s.isAutoPlaying, false);
+});
+
 test("onChange 는 startRepeat 진행에 따라 호출된다", () => {
   const makeAudio = makeFakeAudioFactory({ autoEnd: true });
   const states = [];

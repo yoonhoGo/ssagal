@@ -149,34 +149,18 @@ body {
   animation: pop 0.22s ease;
 }
 
-/* ===== 10연타 불타는 효과: 첨부 이미지 바운스 ===== */
-
-/* 말풍선 안쪽에 위치하는 불 이미지 */
-.fire-overlay {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 86%; /* 말풍선 안에 들어오도록 */
-  height: auto;
-  transform: translate(-50%, -50%);
-  pointer-events: none; /* 클릭을 가리지 않음(계속 연타 가능) */
-  display: none;
-  z-index: 5;
-  filter: drop-shadow(0 0 4px rgba(255, 120, 0, 0.6));
-}
-
-/* 불탈 때: 평소엔(마우스 뗌) 아래쪽, 마우스 누르면 위로 — 스프링 바운스 */
-.burning .fire-overlay {
-  display: block;
-  transform: translate(-50%, -42%) scale(1);
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.burning.pressing .fire-overlay {
-  transform: translate(-50%, -60%) scale(1.06);
-}
-
-/* 불탈 때 평소 글씨는 숨겨 불 이미지가 글자를 대신한다 */
+/* ===== 불타는 효과: 쌰갈 글자만 ===== */
 .burning .bubble__text {
-  opacity: 0;
+  animation: text-fire 0.4s infinite alternate;
+}
+
+@keyframes text-fire {
+  0% {
+    text-shadow: 0 0 4px #fff3b0, 0 -2px 6px #ffd000, 0 -4px 12px #ff8a00,
+      0 -8px 18px #ff5a00, 0 0 24px #ff2d00;
+  }
+  100% {
+    text-shadow: 0 0 6px #fff7c0, 0 -3px 9px #ffdd33, 0 -7px 16px #ffa31a,
+      0 -12px 28px #ff6a00, 0 0 36px #ff3d00;
+  }
 }

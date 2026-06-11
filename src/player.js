@@ -14,10 +14,18 @@ export function createPlayer(options = {}) {
   let remaining = 0;
   let total = 0;
   let streak = 0; // 연속 연타 횟수 (재생 중인 소리가 모두 끝나면 0으로 리셋)
+  let isContinuous = false; // '계속' 무한 재생 모드
   let knownClipMs = options.clipMs ?? null; // 클립 길이 캐시(런타임에 audio.duration으로 학습)
 
   function snapshot() {
-    return { isAutoPlaying, remaining, total, activeCount: active.size, streak };
+    return {
+      isAutoPlaying,
+      remaining,
+      total,
+      activeCount: active.size,
+      streak,
+      isContinuous,
+    };
   }
 
   function emit() {
@@ -56,6 +64,7 @@ export function createPlayer(options = {}) {
 
   function finish() {
     isAutoPlaying = false;
+    isContinuous = false;
     remaining = 0;
     emit();
   }
@@ -91,8 +100,10 @@ export function createPlayer(options = {}) {
     }
   }
 
+  // n 이 Infinity 면 '계속' 모드로 중지 전까지 무한 재생한다.
   function startRepeat(n) {
     isAutoPlaying = true;
+    isContinuous = !Number.isFinite(n);
     total = n;
     remaining = n;
     let launched = 0;
@@ -117,8 +128,13 @@ export function createPlayer(options = {}) {
     launch();
   }
 
+  function startContinuous() {
+    startRepeat(Infinity);
+  }
+
   function stop() {
     isAutoPlaying = false;
+    isContinuous = false;
     remaining = 0;
     total = 0;
     streak = 0;
@@ -133,6 +149,7 @@ export function createPlayer(options = {}) {
   return {
     playOnce,
     startRepeat,
+    startContinuous,
     stop,
     getState: snapshot,
   };

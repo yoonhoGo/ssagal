@@ -7,15 +7,22 @@ const bubbleText = document.querySelector(".bubble__text");
 
 const player = createPlayer({
   onChange: (state) => {
-    if (state.isAutoPlaying || state.remaining > 0) {
+    if (state.isContinuous) {
+      progressEl.textContent = "∞";
+    } else if (state.isAutoPlaying || state.remaining > 0) {
       const done = state.total - state.remaining;
       progressEl.textContent = `${done} / ${state.total}`;
     } else {
       progressEl.textContent = "";
     }
-    // 10연타 이상 + 재생 중인 소리가 있을 때만 불타는 효과.
-    // 모든 오디오가 꺼지면 streak 가 0으로 리셋되어 효과도 함께 꺼진다.
-    const burning = state.streak >= FIRE_THRESHOLD && state.activeCount > 0;
+    // 불타는 효과:
+    //  - '계속' 모드면 중지 전까지 항상
+    //  - x10 이상 자동 반복이면 재생 동안 (직접 연타 없이도)
+    //  - 수동으로 10회 이상 연타하고 소리가 재생 중일 때
+    const burning =
+      state.isContinuous ||
+      (state.isAutoPlaying && state.total >= FIRE_THRESHOLD) ||
+      (state.streak >= FIRE_THRESHOLD && state.activeCount > 0);
     document.body.classList.toggle("burning", burning);
   },
 });
@@ -27,19 +34,9 @@ function popText() {
   bubbleText.classList.add("pop");
 }
 
-const bubbleBtn = document.getElementById("ssyagal-btn");
-
-bubbleBtn.addEventListener("click", () => {
+document.getElementById("ssyagal-btn").addEventListener("click", () => {
   player.playOnce();
   popText();
-});
-
-// 불 이미지 바운스: 마우스를 누르면 위로, 떼면 아래로.
-bubbleBtn.addEventListener("mousedown", () => {
-  document.body.classList.add("pressing");
-});
-window.addEventListener("mouseup", () => {
-  document.body.classList.remove("pressing");
 });
 
 document.querySelectorAll(".pill[data-times]").forEach((btn) => {
@@ -47,6 +44,10 @@ document.querySelectorAll(".pill[data-times]").forEach((btn) => {
     const n = parseInt(btn.dataset.times, 10);
     player.startRepeat(n);
   });
+});
+
+document.getElementById("loop-btn").addEventListener("click", () => {
+  player.startContinuous();
 });
 
 document.getElementById("stop-btn").addEventListener("click", () => {
