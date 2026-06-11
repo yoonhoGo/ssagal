@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ssyagalapp",
+  "productName": "ssyagal",
   "version": "0.1.0",
   "identifier": "com.yoonhogo.ssyagalapp",
   "build": {
@@ -8,11 +8,19 @@
   },
   "app": {
     "withGlobalTauri": true,
+    "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "ssyagalapp",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "싸갈",
+        "width": 240,
+        "height": 280,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false
       }
     ],
     "security": {
