@@ -10,16 +10,16 @@
   <body>
     <div class="stage" data-tauri-drag-region>
       <button class="gear" id="settings-btn" aria-label="설정">⚙</button>
-      <button class="bubble" id="ssyagal-btn" aria-label="쌰갈">
+      <button class="bubble" id="ssyagal-btn" aria-label="쌰갈" title="실행 (Space / Enter)">
         <img class="bubble__img" id="bubble-img" alt="" hidden />
         <span class="bubble__text">쌰갈!</span>
       </button>
       <div class="controls">
-        <button class="pill" data-times="3">x3</button>
-        <button class="pill" data-times="5">x5</button>
-        <button class="pill" data-times="10">x10</button>
-        <button class="pill" id="loop-btn">계속</button>
-        <button class="pill pill--stop" id="stop-btn">■ 중지</button>
+        <button class="pill" data-times="3" title="x3 (3)">x3</button>
+        <button class="pill" data-times="5" title="x5 (5)">x5</button>
+        <button class="pill" data-times="10" title="x10 (0)">x10</button>
+        <button class="pill" id="loop-btn" title="계속 (R)">계속</button>
+        <button class="pill pill--stop" id="stop-btn" title="중지 (Esc / S)">■ 중지</button>
       </div>
       <div class="progress" id="progress"></div>
     </div>

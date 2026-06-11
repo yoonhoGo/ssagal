@@ -1,5 +1,6 @@
 import { createPlayer } from "./player.js";
 import { createSettings } from "./settings.js";
+import { bindShortcuts } from "./shortcuts.js";
 
 const progressEl = document.getElementById("progress");
 const bubbleText = document.querySelector(".bubble__text");
@@ -158,3 +159,6 @@ effectSelect.addEventListener("change", () => {
 
 // 시작 시 저장된 설정 반영
 applySettings();
+
+// 키보드 단축키: Space/Enter=실행, 3/5/0=x3/x5/x10, R=계속, Esc/S=정지.
+bindShortcuts(player);
