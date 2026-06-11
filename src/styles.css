@@ -64,10 +64,11 @@ body {
   bottom: -22px;
   width: 30px;
   height: 30px;
-  background: transparent;
+  background: var(--paper);
   border-left: 7px solid var(--ink);
   border-bottom: 7px solid var(--ink);
   border-bottom-left-radius: 10px;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
   /* 반시계로 25도 추가 회전(-6 → -31) */
   transform: skewX(-18deg) rotate(-31deg);
 }
