@@ -149,62 +149,33 @@ body {
   animation: pop 0.22s ease;
 }
 
-/* ===== 10연타 불타는 효과 ===== */
+/* ===== 10연타 불타는 효과: 첨부 이미지 바운스 ===== */
 
-/* 말풍선 둘레로 일렁이는 불꽃 글로우 */
-.burning .bubble {
-  border-color: var(--ink);
-  animation: fire-glow 0.12s infinite alternate;
+.fire-overlay {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 96%;
+  max-width: 240px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* 클릭을 가리지 않음(계속 연타 가능) */
+  display: none;
+  z-index: 100;
+  filter: drop-shadow(0 0 6px rgba(255, 120, 0, 0.6));
 }
 
-@keyframes fire-glow {
-  from {
-    box-shadow: 0 0 14px 3px #f59e0b, 0 0 30px 10px #ea580c,
-      6px 7px 0 0 var(--ink);
-  }
-  to {
-    box-shadow: 0 0 22px 7px #fbbf24, 0 0 48px 18px #f97316,
-      6px 7px 0 0 var(--ink);
-  }
+.burning .fire-overlay {
+  display: block;
+  animation: fire-bounce 0.55s ease-in-out infinite;
 }
 
-/* 검은 글씨를 휘감는 주황/노랑 화염 */
-.burning .bubble__text {
-  color: var(--ink);
-  text-shadow: 0 0 4px #fde047, 0 -3px 8px #fbbf24, 0 -6px 14px #f59e0b,
-    0 0 22px #f97316, 0 0 34px #ef4444;
-  animation: fire-flicker 0.1s infinite alternate;
-}
-
-@keyframes fire-flicker {
-  from {
-    filter: brightness(1);
+@keyframes fire-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, -42%) scale(1);
   }
-  to {
-    filter: brightness(1.3);
-  }
-}
-
-/* 글자 뒤에서 위로 솟아오르는 화염 레이어 */
-.burning .bubble__text::before {
-  content: attr(data-text);
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: -1;
-  color: transparent;
-  text-shadow: 0 -4px 10px #fde047, 0 -10px 18px #f59e0b, 0 -16px 28px #ea580c,
-    0 -2px 6px #fbbf24;
-  animation: flame-rise 0.16s infinite alternate;
-}
-
-@keyframes flame-rise {
-  from {
-    transform: translateY(0) scaleY(1);
-    opacity: 0.85;
-  }
-  to {
-    transform: translateY(-3px) scaleY(1.14);
-    opacity: 1;
+  50% {
+    transform: translate(-50%, -58%) scale(1.08);
   }
 }
