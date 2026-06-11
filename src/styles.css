@@ -68,8 +68,8 @@ body {
   border-left: 7px solid var(--ink);
   border-bottom: 7px solid var(--ink);
   border-bottom-left-radius: 10px;
-  /* 반시계로 15도 추가 회전(-6 → -21) */
-  transform: skewX(-18deg) rotate(-21deg);
+  /* 반시계로 25도 추가 회전(-6 → -31) */
+  transform: skewX(-18deg) rotate(-31deg);
 }
 
 .bubble__text {
