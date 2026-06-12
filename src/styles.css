@@ -55,12 +55,18 @@ body {
 }
 
 .bubble__text {
+  --text-effect-transform: scale(1);
   position: relative;
+  z-index: 1;
+  isolation: isolate;
   top: -8px;
   font-size: 42px;
   line-height: 1;
   color: var(--ink);
   letter-spacing: 1px;
+  white-space: nowrap;
+  transform: var(--text-effect-transform);
+  transform-origin: 50% 58%;
   /* 양각(엠보싱) 느낌 */
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18), 0 -1px 0 rgba(255, 255, 255, 0.7);
 }
@@ -113,72 +119,6 @@ body {
 
 .progress:empty {
   visibility: hidden;
-}
-
-/* 클릭 시 글씨를 두 배로 팝 */
-@keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.bubble__text.pop {
-  animation: pop 0.22s ease;
-}
-
-/* ===== 불타는 효과: 쌰갈 글자만 ===== */
-.burning .bubble__text {
-  animation: text-fire 0.4s infinite alternate;
-}
-
-/* 불타는 중에도 클릭 시 글씨 두 배 팝이 함께 적용된다 */
-.burning .bubble__text.pop {
-  animation: text-fire 0.4s infinite alternate, pop 0.22s ease;
-}
-
-@keyframes text-fire {
-  0% {
-    text-shadow: 0 0 4px #fff3b0, 0 -2px 6px #ffd000, 0 -4px 12px #ff8a00,
-      0 -8px 18px #ff5a00, 0 0 24px #ff2d00;
-  }
-  100% {
-    text-shadow: 0 0 6px #fff7c0, 0 -3px 9px #ffdd33, 0 -7px 16px #ffa31a,
-      0 -12px 28px #ff6a00, 0 0 36px #ff3d00;
-  }
-}
-
-/* ===== 무지개 효과: effect=rainbow 일 때 불꽃 대신 적용 ===== */
-.burning.effect-rainbow .bubble__text {
-  animation: text-rainbow 1.2s linear infinite;
-}
-
-.burning.effect-rainbow .bubble__text.pop {
-  animation: text-rainbow 1.2s linear infinite, pop 0.22s ease;
-}
-
-@keyframes text-rainbow {
-  0% {
-    text-shadow: 0 0 10px #ff004c, 0 0 18px #ff7a00;
-    color: #ff004c;
-  }
-  33% {
-    text-shadow: 0 0 10px #00d2ff, 0 0 18px #00ff95;
-    color: #00a2ff;
-  }
-  66% {
-    text-shadow: 0 0 10px #b400ff, 0 0 18px #ff00d4;
-    color: #b400ff;
-  }
-  100% {
-    text-shadow: 0 0 10px #ff004c, 0 0 18px #ff7a00;
-    color: #ff004c;
-  }
 }
 
 /* ===== 커스텀 이미지 (말풍선 글씨 대체) ===== */
