@@ -8,6 +8,7 @@ fn greet(name: &str) -> String {
 #[cfg(desktop)]
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     use tauri::{
+        image::Image,
         menu::{Menu, MenuItem, PredefinedMenuItem},
         tray::TrayIconBuilder,
         Manager,
@@ -22,8 +23,12 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     // 메뉴 이벤트 핸들러에서 라벨을 갱신하기 위해 토글 항목 핸들을 복제해 넘긴다.
     let toggle_handle = toggle_i.clone();
 
+    // 템플릿 아이콘(흰색+투명)을 사용하면 macOS가 메뉴바 밝기에 맞춰 색을 자동 반전한다.
+    let tray_icon = Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?;
+
     TrayIconBuilder::with_id("ssagal-tray")
-        .icon(app.default_window_icon().unwrap().clone())
+        .icon(tray_icon)
+        .icon_as_template(true)
         .tooltip("쌰갈")
         .menu(&menu)
         .on_menu_event(move |app, event| match event.id.as_ref() {
