@@ -14,6 +14,49 @@
   }
 }
 
+/* 🔊 쌰갈 효과: 평소엔 기본 말풍선, 피버타임에만 scream 말풍선으로 바뀌며 2배로 커진다.
+   (창은 main.js 가 피버 진입 시 2배로 키워서 잘리지 않는다) */
+.burning.effect-scream .bubble {
+  --bubble-scale: 2;
+  background-image: url("/assets/scream-bubble.png");
+  transition: transform 0.25s ease;
+}
+
+/* scream 말풍선은 흰 영역 중심이 기본 말풍선과 달라(우측 3px·세로 중앙) 글씨를 다시 가운데로 맞춘다.
+   피버타임엔 ChosunGs 글씨체로 바꾸고, 불꽃 색깔 효과(text-fire)는 끈다 */
+.burning.effect-scream .bubble__text {
+  top: 0;
+  left: 3px;
+  font-family: "ChosunGs", "Jua", system-ui, sans-serif;
+  animation: none;
+}
+
+.burning.effect-scream .bubble__text.pop {
+  animation: pop 0.22s ease;
+}
+
+/* 2배가 된 말풍선이 버튼/진행표시를 가리지 않게 아래로 밀어낸다 */
+.burning.effect-scream .controls {
+  margin-top: 64px;
+}
+
+.effect-scream .bubble.pop {
+  animation: bubble-pop 0.22s ease;
+}
+
+/* 글씨 pop(0.22s, 40% 피크)과 동일한 타이밍으로 현재 배율에서 1.25배 (기울기 유지) */
+@keyframes bubble-pop {
+  0% {
+    transform: scale(var(--bubble-scale)) rotate(var(--bubble-rotate));
+  }
+  40% {
+    transform: scale(calc(var(--bubble-scale) * 1.25)) rotate(var(--bubble-rotate));
+  }
+  100% {
+    transform: scale(var(--bubble-scale)) rotate(var(--bubble-rotate));
+  }
+}
+
 .burning .bubble__text {
   animation: text-fire 0.4s infinite alternate;
 }
