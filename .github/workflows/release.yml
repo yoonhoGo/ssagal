@@ -1,6 +1,6 @@
 # v* 태그 푸시 시: 테스트 → 바이너리 빌드 → npm publish → GitHub Release 생성.
-# npm 인증은 Trusted Publishing(OIDC) 사용 — npmjs.com 패키지 설정에서
-# GitHub Actions(yoonhoGo/ssagal, release.yml)를 Trusted Publisher로 등록해야 함.
+# npm 인증은 access token 사용 — 저장소 시크릿 NPM_TOKEN 에 등록 필요
+# (npmjs.com → Access Tokens → Automation 토큰 생성 후 repo Settings > Secrets 에 추가).
 name: Release
 
 on:
@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: write # GitHub Release 생성
-  id-token: write # npm Trusted Publishing (OIDC)
 
 jobs:
   release:
@@ -22,9 +21,6 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-
-      # Trusted Publishing은 npm >= 11.5 필요 (node 22 동봉 npm은 10.x)
-      - run: npm install -g npm@latest
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -45,6 +41,8 @@ jobs:
 
       # prepublishOnly가 cargo release 빌드 + dist-bin 패키징을 수행
       - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: GitHub Release 생성
         env:
