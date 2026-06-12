@@ -27,8 +27,57 @@ const player = createPlayer({
     const shouldBurn = state.isHot && settings.effect !== "none";
     document.body.classList.toggle("burning", shouldBurn);
     document.body.dataset.effectLevel = String(shouldBurn ? getEffectLevel(state) : 0);
+    syncFeverWindow();
   },
 });
+
+// ===== 쌰갈 효과 피버타임: 창 2배 확대 =====
+// 말풍선이 transform 으로 2배가 되면 240x280 창에서 잘리므로 창 자체를 키운다 (중심 유지).
+const BASE_WIN = { width: 240, height: 280 }; // tauri.conf.json 의 창 크기와 같아야 함
+let feverWindowOn = false;
+
+async function setFeverWindow(on) {
+  const tauri = window.__TAURI__;
+  if (!tauri || on === feverWindowOn) return;
+  feverWindowOn = on;
+  const win = tauri.window.getCurrentWindow();
+  const { LogicalSize, LogicalPosition } = tauri.dpi;
+  const pos = (await win.outerPosition()).toLogical(await win.scaleFactor());
+  const dx = BASE_WIN.width / 2;
+  const dy = BASE_WIN.height / 2;
+  if (on) {
+    await win.setSize(new LogicalSize(BASE_WIN.width * 2, BASE_WIN.height * 2));
+    await win.setPosition(new LogicalPosition(pos.x - dx, pos.y - dy));
+  } else {
+    await win.setSize(new LogicalSize(BASE_WIN.width, BASE_WIN.height));
+    await win.setPosition(new LogicalPosition(pos.x + dx, pos.y + dy));
+  }
+}
+
+// 쌰갈 피버 중 말풍선 무작위 기울기(-30°~+30°). 피버 진입 후 팝마다 새 각도를 뽑는다.
+let screamTiltOn = false;
+
+function setRandomTilt() {
+  const deg = (Math.random() * 60 - 30).toFixed(1);
+  bubbleEl.style.setProperty("--bubble-rotate", `${deg}deg`);
+}
+
+function syncScreamTilt(on) {
+  if (on === screamTiltOn) return;
+  screamTiltOn = on;
+  if (on) {
+    setRandomTilt();
+  } else {
+    bubbleEl.style.removeProperty("--bubble-rotate");
+  }
+}
+
+// 피버 상태·효과 설정에 맞춰 창 크기와 기울기를 동기화한다 (브라우저 단독 실행 등 실패는 무시).
+function syncFeverWindow() {
+  const on = document.body.classList.contains("burning") && settings.effect === "scream";
+  syncScreamTilt(on);
+  setFeverWindow(on).catch(() => {});
+}
 
 function getEffectLevel(state) {
   if (state.isContinuous) return 3;
@@ -41,10 +90,14 @@ function getEffectLevel(state) {
 }
 
 // 클릭마다 글씨를 두 배로 팝 (애니메이션 재시작).
+// 말풍선에도 pop 클래스를 붙인다 — 쌰갈 효과일 때만 CSS 가 말풍선을 키운다.
 function popText() {
+  if (screamTiltOn) setRandomTilt(); // 쌰갈 피버 중엔 팝마다 기울기를 새로 뽑는다
   bubbleText.classList.remove("pop");
+  bubbleEl.classList.remove("pop");
   void bubbleText.offsetWidth; // reflow 강제 → 연타 시에도 매번 재생
   bubbleText.classList.add("pop");
+  bubbleEl.classList.add("pop");
 }
 
 // ===== 설정 입력 컨트롤 =====
@@ -70,11 +123,13 @@ function applySettings() {
 
   document.body.classList.toggle("effect-rainbow", settings.effect === "rainbow");
   document.body.classList.toggle("effect-heart", settings.effect === "heart");
+  document.body.classList.toggle("effect-scream", settings.effect === "scream");
 
   // 사운드/딜레이는 player 에 반영
   player.setSrc(settings.soundDataUrl ?? undefined);
   player.setGap(settings.gapMs);
 
+  syncFeverWindow(); // 피버 중 효과를 바꿔도 창 크기가 맞도록
   syncControls();
 }
 
@@ -95,8 +150,35 @@ function readAsDataUrl(file) {
   });
 }
 
+// ===== 말풍선 드래그로 창 이동 =====
+// 누른 채 4px 이상 움직이면 드래그로 판단해 창을 옮기고, 이어지는 click 은 무시한다.
+const DRAG_THRESHOLD = 4;
+let pressPos = null;
+let draggedWindow = false;
+
+bubbleEl.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  draggedWindow = false;
+  pressPos = { x: e.clientX, y: e.clientY };
+});
+
+bubbleEl.addEventListener("mousemove", (e) => {
+  if (!pressPos || draggedWindow) return;
+  if (Math.hypot(e.clientX - pressPos.x, e.clientY - pressPos.y) < DRAG_THRESHOLD) return;
+  draggedWindow = true;
+  window.__TAURI__?.window.getCurrentWindow().startDragging().catch(() => {});
+});
+
+window.addEventListener("mouseup", () => {
+  pressPos = null;
+});
+
 // ===== 재생 컨트롤 =====
 document.getElementById("ssyagal-btn").addEventListener("click", () => {
+  if (draggedWindow) {
+    draggedWindow = false; // 드래그 직후의 click 은 재생하지 않는다
+    return;
+  }
   player.playOnce();
 });
 

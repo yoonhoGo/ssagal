@@ -4,6 +4,12 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "ChosunGs";
+  src: url("/assets/ChosunGs.ttf") format("truetype");
+  font-display: swap;
+}
+
 :root {
   --ink: #1a1a1a;
   --paper: #ffffff;
@@ -41,6 +47,8 @@ body {
 
 /* 말풍선 버튼 */
 .bubble {
+  --bubble-scale: 1; /* 효과(쌰갈 피버 등)가 키울 수 있는 기본 배율 */
+  --bubble-rotate: 0deg; /* 쌰갈 피버 시 main.js 가 무작위 기울기를 넣는다 */
   position: relative;
   width: 180px;
   height: 128px;
@@ -51,6 +59,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transform: scale(var(--bubble-scale)) rotate(var(--bubble-rotate));
   transition: transform 0.06s ease;
 }
 
@@ -72,7 +81,7 @@ body {
 }
 
 .bubble:active {
-  transform: translate(3px, 3px);
+  transform: translate(3px, 3px) scale(var(--bubble-scale)) rotate(var(--bubble-rotate));
 }
 
 /* 프리셋 / 중지 pill */

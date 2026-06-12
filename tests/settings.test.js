@@ -32,6 +32,12 @@ test("save: 공주 효과를 저장한다", () => {
   assert.equal(after.effect, "heart");
 });
 
+test("save: 쌰갈 효과를 저장한다", () => {
+  const s = createSettings({ storage: makeStorage() });
+  const after = s.save({ effect: "scream" });
+  assert.equal(after.effect, "scream");
+});
+
 test("save: 저장 후 load 하면 같은 값이 나온다(영속)", () => {
   const storage = makeStorage();
   createSettings({ storage }).save({ gapMs: -50, effect: "none" });
