@@ -1,6 +1,6 @@
 {
   "name": "ssagal",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "쌰갈! 누르면 소리나는 플로팅 데스크톱 토이 앱 (Tauri). macOS arm64 전용.",
   "type": "module",
   "bin": {
