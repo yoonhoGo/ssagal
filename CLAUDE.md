@@ -39,7 +39,7 @@
 
 - 버전은 **3곳 동기화 필수**: `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`
 - `v*` 태그 푸시 → GitHub Actions가 테스트·빌드·npm publish·GitHub Release 자동 수행 (`.github/workflows/release.yml`)
-- npm 인증은 Trusted Publishing(OIDC) — 토큰/시크릿 없음
+- npm 인증은 access token — 저장소 시크릿 `NPM_TOKEN`(npmjs.com Automation 토큰) 필요
 - 태그는 annotated: `git tag -a v0.3.0 -m "Release 0.3.0"`
 
 ## ⛔ Do Not

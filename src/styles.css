@@ -35,7 +35,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 2px;
   padding: 16px;
 }
 
@@ -44,32 +44,14 @@ body {
   position: relative;
   width: 180px;
   height: 128px;
-  border: 7px solid var(--ink);
-  border-radius: 50% / 46%;
-  background: var(--paper);
+  border: 0;
+  border-radius: 0;
+  background: url("/assets/speech-bubble.png") center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  /* 키링 같은 입체 받침(검정 오프셋 그림자) */
-  box-shadow: 6px 7px 0 0 var(--ink);
-  transition: transform 0.06s ease, box-shadow 0.06s ease;
-}
-
-/* 좌하단 꼬리(tail) */
-.bubble::after {
-  content: "";
-  position: absolute;
-  left: 30px;
-  bottom: -22px;
-  width: 30px;
-  height: 30px;
-  background: var(--paper);
-  border-left: 7px solid var(--ink);
-  border-bottom: 7px solid var(--ink);
-  border-bottom-left-radius: 10px;
-  /* 반시계로 25도 추가 회전(-6 → -31) */
-  transform: skewX(-18deg) rotate(-31deg);
+  transition: transform 0.06s ease;
 }
 
 .bubble__text {
@@ -77,6 +59,7 @@ body {
   position: relative;
   z-index: 1;
   isolation: isolate;
+  top: -8px;
   font-size: 42px;
   line-height: 1;
   color: var(--ink);
@@ -90,7 +73,6 @@ body {
 
 .bubble:active {
   transform: translate(3px, 3px);
-  box-shadow: 2px 3px 0 0 var(--ink);
 }
 
 /* 프리셋 / 중지 pill */
@@ -98,6 +80,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  margin-top: -8px;
   gap: 8px;
 }
 
