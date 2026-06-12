@@ -24,9 +24,21 @@ const player = createPlayer({
       progressEl.textContent = "";
     }
     // 불타는 효과 여부는 player 가 판단(isHot). 단, 설정 효과가 '없음'이면 끈다.
-    document.body.classList.toggle("burning", state.isHot && settings.effect !== "none");
+    const shouldBurn = state.isHot && settings.effect !== "none";
+    document.body.classList.toggle("burning", shouldBurn);
+    document.body.dataset.effectLevel = String(shouldBurn ? getEffectLevel(state) : 0);
   },
 });
+
+function getEffectLevel(state) {
+  if (state.isContinuous) return 3;
+  const total = Number.isFinite(state.total) ? state.total : 0;
+  const pressure = Math.max(state.streak, total, state.activeCount);
+  if (pressure >= 30) return 3;
+  if (pressure >= 20) return 2;
+  if (pressure >= 10) return 1;
+  return 0;
+}
 
 // 클릭마다 글씨를 두 배로 팝 (애니메이션 재시작).
 function popText() {
@@ -56,8 +68,8 @@ function applySettings() {
     bubbleEl.classList.remove("has-image");
   }
 
-  // 효과 테마: 무지개일 때만 effect-rainbow 클래스 (없으면 기본 불꽃)
   document.body.classList.toggle("effect-rainbow", settings.effect === "rainbow");
+  document.body.classList.toggle("effect-heart", settings.effect === "heart");
 
   // 사운드/딜레이는 player 에 반영
   player.setSrc(settings.soundDataUrl ?? undefined);
