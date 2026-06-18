@@ -1,5 +1,5 @@
 import { createPlayer } from "./player.js";
-import { createSettings } from "./settings.js";
+import { createSettings, defaultSoundSrc, DEFAULT_TEXT_BY_EFFECT } from "./settings.js";
 import { bindShortcuts } from "./shortcuts.js";
 
 const progressEl = document.getElementById("progress");
@@ -10,8 +10,13 @@ const bubbleImg = document.getElementById("bubble-img");
 const store = createSettings();
 let settings = store.load();
 
+function resolvePlayerSrc() {
+  // 커스텀 음원이 지정돼 있으면 그것을, 아니면 현재 효과의 기본 음원을 쓴다.
+  return settings.soundDataUrl ?? defaultSoundSrc(settings.effect);
+}
+
 const player = createPlayer({
-  src: settings.soundDataUrl ?? undefined, // null 이면 기본 음원 경로 사용
+  src: resolvePlayerSrc(),
   gapMs: settings.gapMs,
   onPlay: () => popText(), // 연타·x10·계속 등 모든 재생 시점에 글씨 팝
   onChange: (state) => {
@@ -27,6 +32,7 @@ const player = createPlayer({
     const shouldBurn = state.isHot && settings.effect !== "none";
     document.body.classList.toggle("burning", shouldBurn);
     document.body.dataset.effectLevel = String(shouldBurn ? getEffectLevel(state) : 0);
+    syncBubbleText();
     syncFeverWindow();
   },
 });
@@ -89,6 +95,16 @@ function getEffectLevel(state) {
   return 0;
 }
 
+// 갈(scold) 효과는 이펙트 발동(burning) 중엔 한자 喝!!! 로 바꾼다. 평소엔 기본 "갈!!!".
+function syncBubbleText() {
+  if (settings.imageDataUrl) return; // 커스텀 이미지가 우선이면 글씨는 건드리지 않는다
+  const burning = document.body.classList.contains("burning");
+  bubbleText.textContent =
+    burning && settings.effect === "scold"
+      ? "!!!喝!!!"
+      : DEFAULT_TEXT_BY_EFFECT[settings.effect] ?? DEFAULT_TEXT_BY_EFFECT.fire;
+}
+
 // 클릭마다 글씨를 두 배로 팝 (애니메이션 재시작).
 // 말풍선에도 pop 클래스를 붙인다 — 쌰갈 효과일 때만 CSS 가 말풍선을 키운다.
 function popText() {
@@ -121,12 +137,17 @@ function applySettings() {
     bubbleEl.classList.remove("has-image");
   }
 
+  // 커스텀 이미지가 없을 때는 효과에 맞는 기본 글씨를 넣는다 (갈 효과는 "!!!갈!!!").
+  // 이펙트 발동 중엔 syncBubbleText 가 한자 "!!!喝!!!" 로 바꾼다.
+  syncBubbleText();
+
   document.body.classList.toggle("effect-rainbow", settings.effect === "rainbow");
   document.body.classList.toggle("effect-heart", settings.effect === "heart");
   document.body.classList.toggle("effect-scream", settings.effect === "scream");
+  document.body.classList.toggle("effect-scold", settings.effect === "scold");
 
   // 사운드/딜레이는 player 에 반영
-  player.setSrc(settings.soundDataUrl ?? undefined);
+  player.setSrc(resolvePlayerSrc());
   player.setGap(settings.gapMs);
 
   syncFeverWindow(); // 피버 중 효과를 바꿔도 창 크기가 맞도록

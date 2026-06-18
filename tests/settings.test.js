@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createSettings, sanitize, DEFAULTS } from "../src/settings.js";
+import {
+  createSettings,
+  sanitize,
+  DEFAULTS,
+  defaultSoundSrc,
+  DEFAULT_SOUND_BY_EFFECT,
+} from "../src/settings.js";
 
 // 인메모리 가짜 storage (localStorage 인터페이스).
 function makeStorage(initial = {}) {
@@ -36,6 +42,22 @@ test("save: 쌰갈 효과를 저장한다", () => {
   const s = createSettings({ storage: makeStorage() });
   const after = s.save({ effect: "scream" });
   assert.equal(after.effect, "scream");
+});
+
+test("save: 갈 효과를 저장한다", () => {
+  const s = createSettings({ storage: makeStorage() });
+  const after = s.save({ effect: "scold" });
+  assert.equal(after.effect, "scold");
+});
+
+test("defaultSoundSrc: 효과별 기본 번들 음원을 돌려준다", () => {
+  assert.equal(defaultSoundSrc("scold"), "/assets/gal.m4a");
+  assert.equal(defaultSoundSrc("scream"), "/assets/ssyagal.m4a");
+  assert.equal(defaultSoundSrc("heart"), "/assets/ssyagal.m4a");
+});
+
+test("defaultSoundSrc: 알 수 없는 효과는 기본값(fire) 음원으로 폴백한다", () => {
+  assert.equal(defaultSoundSrc("unknown"), DEFAULT_SOUND_BY_EFFECT.fire);
 });
 
 test("save: 저장 후 load 하면 같은 값이 나온다(영속)", () => {

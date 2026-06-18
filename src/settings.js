@@ -2,7 +2,31 @@
 // storage(기본 localStorage)를 주입받아 브라우저 없이 단위 테스트할 수 있다.
 // 이미지/사운드는 data URL 문자열로 저장해 새로고침 후에도 유지된다.
 
-export const EFFECTS = ["fire", "rainbow", "heart", "scream", "none"];
+export const EFFECTS = ["fire", "rainbow", "heart", "scream", "scold", "none"];
+
+// 효과별 기본 번들 음원. 커스텀 음원이 없을 때 이 경로를 사용한다.
+export const DEFAULT_SOUND_BY_EFFECT = Object.freeze({
+  fire: "/assets/ssyagal.m4a",
+  rainbow: "/assets/ssyagal.m4a",
+  heart: "/assets/ssyagal.m4a",
+  scream: "/assets/ssyagal.m4a",
+  scold: "/assets/gal.m4a",
+  none: "/assets/ssyagal.m4a",
+});
+
+// 효과별 기본 말풍선 글씨. 커스텀 이미지가 없을 때 이 텍스트를 보여준다.
+export const DEFAULT_TEXT_BY_EFFECT = Object.freeze({
+  fire: "쌰갈!",
+  rainbow: "쌰갈!",
+  heart: "쌰갈!",
+  scream: "쌰갈!",
+  scold: "!!!갈!!!",
+  none: "쌰갈!",
+});
+
+export function defaultSoundSrc(effect) {
+  return DEFAULT_SOUND_BY_EFFECT[effect] ?? DEFAULT_SOUND_BY_EFFECT[DEFAULTS.effect];
+}
 
 export const DEFAULTS = Object.freeze({
   imageDataUrl: null, // null = 기본 말풍선 글씨
