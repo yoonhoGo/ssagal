@@ -1,24 +1,26 @@
 // 음원 재생 + 자동 반복 상태 머신.
-// makeAudio(기본 (src) => new Audio(src))와 타이머를 주입받아 테스트 가능하게 한다.
-// 연타 시 매번 새 Audio 인스턴스를 만들어 중첩 재생한다.
+// engine(Web Audio 엔진, 기본 createAudioEngine())과 타이머를 주입받아 테스트 가능하게 한다.
+// 연타 시 매번 가벼운 AudioBufferSourceNode 를 띄워 중첩 재생한다(디코딩은 엔진이 1회 캐싱).
+import { createAudioEngine } from "./audio-engine.js";
+
 export function createPlayer(options = {}) {
   const defaultSrc = "/assets/ssyagal.m4a";
   let src = options.src ?? defaultSrc;
   // 순차 반복 사이 간격(ms). 음수면 클립이 끝나기 전에 다음 클립이 겹쳐 시작한다.
   let gapMs = options.gapMs ?? -200;
-  const makeAudio = options.makeAudio ?? ((s) => new Audio(s));
+  const engine = options.engine ?? createAudioEngine();
   const setTimeoutFn = options.setTimeout ?? ((cb, ms) => setTimeout(cb, ms));
   const onChange = options.onChange ?? (() => {});
   const onPlay = options.onPlay ?? (() => {}); // 재생을 시작할 때마다 호출(연타·자동반복 공통)
   const hotThreshold = options.hotThreshold ?? 10; // 불타는 효과 임계값
 
-  const active = new Set(); // 현재 재생 중인 Audio (stop 시 일괄 정지용)
+  const active = new Set(); // 현재 재생 중인 오디오 handle (stop 시 일괄 정지용)
   let isAutoPlaying = false;
   let remaining = 0;
   let total = 0;
   let streak = 0; // 연속 연타 횟수 (재생 중인 소리가 모두 끝나면 0으로 리셋)
   let isContinuous = false; // '계속' 무한 재생 모드
-  let knownClipMs = options.clipMs ?? null; // 클립 길이 캐시(런타임에 audio.duration으로 학습)
+  let knownClipMs = options.clipMs ?? null; // 클립 길이 캐시(런타임에 버퍼 duration 으로 학습)
 
   function snapshot() {
     const activeCount = active.size;
@@ -42,37 +44,33 @@ export function createPlayer(options = {}) {
     onChange(snapshot());
   }
 
-  function remove(audio) {
-    if (active.delete(audio) && active.size === 0) {
+  function remove(handle) {
+    if (active.delete(handle) && active.size === 0) {
       streak = 0; // 모든 소리가 꺼지면 연타 스트릭 리셋
     }
   }
 
-  // 새 오디오 인스턴스를 만들어 재생한다. onEnded는 재생 종료 시 1회 호출.
-  // ended/error 는 인스턴스당 최대 1회만 발생하므로 once 로 자동 정리한다.
+  // 새 오디오를 재생한다. onEnded는 재생 종료 시 1회 호출.
+  // 사용자 제스처(click/keydown) 컨텍스트 안에서 호출되므로 resume() 으로 자동재생 정책을 해소한다.
+  // handle 을 미리 선언(초기 undefined)하는 이유: 실제 엔진은 onended 가 비동기라 항상
+  // 할당 후에 호출되지만, 테스트용 가짜 엔진은 동기적으로 onEnded 를 칠 수 있어 그 시점엔
+  // handle 이 할당 전이다. 선언만 분리해 두면 undefined 참조로 no-op 처리되고(아래 remove),
+  // 동기 종료 경로(순차 반복)의 streak 리셋은 의미 없으므로 안전하다.
   function spawn(onEnded) {
-    const audio = makeAudio(src);
-    active.add(audio);
-    audio.addEventListener(
-      "ended",
-      () => {
-        remove(audio);
-        if (onEnded) onEnded();
-        else emit();
-      },
-      { once: true },
-    );
-    audio.addEventListener(
-      "error",
-      () => {
-        remove(audio);
-        emit();
-      },
-      { once: true },
-    );
-    audio.play();
+    engine.resume().catch(() => {});
+    let handle;
+    handle = engine.play(src, (err) => {
+      remove(handle);
+      if (err) {
+        emit(); // 디코딩/로드 실패 → 상태만 반영
+        return;
+      }
+      if (onEnded) onEnded();
+      else emit();
+    });
+    active.add(handle);
     onPlay();
-    return audio;
+    return handle;
   }
 
   // 연타 대응: 다른 소리를 멈추지 않고 새 인스턴스를 띄워 중첩 재생.
@@ -89,27 +87,27 @@ export function createPlayer(options = {}) {
     emit();
   }
 
-  // 아직 모르면 audio.duration 으로 클립 길이를 학습(캐시)한다.
-  function learnClip(audio) {
-    if (knownClipMs == null && Number.isFinite(audio.duration) && audio.duration > 0) {
-      knownClipMs = audio.duration * 1000;
+  // 아직 모르면 버퍼 duration 으로 클립 길이를 학습(캐시)한다.
+  function learnClip(handle) {
+    if (knownClipMs == null && handle.duration != null && handle.duration > 0) {
+      knownClipMs = handle.duration * 1000;
     }
   }
 
   // 다음 클립을 "현재 클립 시작 + (클립길이 + gapMs)" 시점에 예약한다.
   // gapMs 가 음수면 이전 클립이 끝나기 전에 겹쳐 시작된다.
-  function scheduleNext(audio, launch) {
+  function scheduleNext(handle, launch) {
     const fire = () => {
-      learnClip(audio);
+      learnClip(handle);
       setTimeoutFn(() => {
         if (isAutoPlaying) launch();
       }, Math.max(0, (knownClipMs ?? 0) + gapMs));
     };
-    // 클립 길이를 이미 알거나 지금 알 수 있으면 즉시 예약, 아니면 메타데이터 로드 후 예약.
-    if (knownClipMs != null || (Number.isFinite(audio.duration) && audio.duration > 0)) {
+    // 클립 길이를 이미 알거나 지금 알 수 있으면 즉시 예약, 아니면 버퍼 준비 후 예약.
+    if (knownClipMs != null || (handle.duration != null && handle.duration > 0)) {
       fire();
     } else {
-      audio.addEventListener("loadedmetadata", fire, { once: true });
+      handle.whenReady(fire);
     }
   }
 
@@ -124,7 +122,7 @@ export function createPlayer(options = {}) {
     const launch = () => {
       if (!isAutoPlaying || launched >= n) return;
       launched += 1;
-      const audio = spawn(() => {
+      const handle = spawn(() => {
         remaining -= 1;
         if (remaining <= 0 || !isAutoPlaying) {
           finish();
@@ -134,7 +132,7 @@ export function createPlayer(options = {}) {
       });
       emit();
       if (launched < n) {
-        scheduleNext(audio, launch);
+        scheduleNext(handle, launch);
       }
     };
 
@@ -146,10 +144,11 @@ export function createPlayer(options = {}) {
   }
 
   // 음원 경로를 런타임에 교체한다(설정에서 사운드 변경). 다음 spawn 부터 적용된다.
-  // 클립 길이는 음원마다 다르므로 캐시를 비워 새로 학습하게 한다.
+  // 클립 길이는 음원마다 다르므로 캐시를 비워 새로 학습하게 하고, 엔진에 prefetch 를 건다.
   function setSrc(newSrc) {
     src = newSrc ?? defaultSrc;
     knownClipMs = null;
+    engine.loadBuffer(src).catch(() => {});
   }
 
   // 순차 반복 간격(ms)을 런타임에 바꾼다. 유효하지 않은 값은 무시한다.
@@ -163,9 +162,8 @@ export function createPlayer(options = {}) {
     remaining = 0;
     total = 0;
     streak = 0;
-    for (const audio of active) {
-      audio.pause();
-      audio.currentTime = 0;
+    for (const handle of active) {
+      handle.stop(); // onEnded 억제 → stop 후 잔여 emit 방지
     }
     active.clear();
     emit();

@@ -1,4 +1,5 @@
 import { createPlayer } from "./player.js";
+import { createAudioEngine } from "./audio-engine.js";
 import { createSettings, defaultSoundSrc, DEFAULT_TEXT_BY_EFFECT } from "./settings.js";
 import { bindShortcuts } from "./shortcuts.js";
 
@@ -10,30 +11,54 @@ const bubbleImg = document.getElementById("bubble-img");
 const store = createSettings();
 let settings = store.load();
 
+// Web Audio 엔진. 음원을 1회 디코딩해 캐싱하고 연타 시 가벼운 source 노드로 중첩 재생한다.
+const engine = createAudioEngine();
+
 function resolvePlayerSrc() {
   // 커스텀 음원이 지정돼 있으면 그것을, 아니면 현재 효과의 기본 음원을 쓴다.
   return settings.soundDataUrl ?? defaultSoundSrc(settings.effect);
 }
 
+// 연타 시 한 프레임에 여러 번 onChange 가 와도 DOM 반영은 1회만 한다(rAF 코알레스싱).
+let pendingState = null;
+let rafScheduled = false;
+
+function applyState(state) {
+  if (state.isContinuous) {
+    progressEl.textContent = "∞";
+  } else if (state.isAutoPlaying || state.remaining > 0) {
+    const done = state.total - state.remaining;
+    progressEl.textContent = `${done} / ${state.total}`;
+  } else {
+    progressEl.textContent = "";
+  }
+  // 불타는 효과 여부는 player 가 판단(isHot). 단, 설정 효과가 '없음'이면 끈다.
+  const shouldBurn = state.isHot && settings.effect !== "none";
+  document.body.classList.toggle("burning", shouldBurn);
+  document.body.dataset.effectLevel = String(shouldBurn ? getEffectLevel(state) : 0);
+  syncBubbleText();
+  syncFeverWindow();
+}
+
+function flushState() {
+  rafScheduled = false;
+  if (pendingState == null) return;
+  const s = pendingState;
+  pendingState = null;
+  applyState(s);
+}
+
 const player = createPlayer({
+  engine,
   src: resolvePlayerSrc(),
   gapMs: settings.gapMs,
   onPlay: () => popText(), // 연타·x10·계속 등 모든 재생 시점에 글씨 팝
   onChange: (state) => {
-    if (state.isContinuous) {
-      progressEl.textContent = "∞";
-    } else if (state.isAutoPlaying || state.remaining > 0) {
-      const done = state.total - state.remaining;
-      progressEl.textContent = `${done} / ${state.total}`;
-    } else {
-      progressEl.textContent = "";
+    pendingState = state;
+    if (!rafScheduled) {
+      rafScheduled = true;
+      requestAnimationFrame(flushState);
     }
-    // 불타는 효과 여부는 player 가 판단(isHot). 단, 설정 효과가 '없음'이면 끈다.
-    const shouldBurn = state.isHot && settings.effect !== "none";
-    document.body.classList.toggle("burning", shouldBurn);
-    document.body.dataset.effectLevel = String(shouldBurn ? getEffectLevel(state) : 0);
-    syncBubbleText();
-    syncFeverWindow();
   },
 });
 
@@ -107,13 +132,35 @@ function syncBubbleText() {
 
 // 클릭마다 글씨를 두 배로 팝 (애니메이션 재시작).
 // 말풍선에도 pop 클래스를 붙인다 — 쌰갈 효과일 때만 CSS 가 말풍선을 키운다.
+// effects.css 의 pop 계열 애니메이션만 getAnimations() 로 cancel()+play() 해 reflow 없이 재시작.
+// infinite 효과 애니메이션(text-fire, text-rainbow, scold-bubble 등)은 건드리지 않는다.
+const POP_ANIM_NAMES = new Set(["pop", "bubble-pop", "scold-pop"]);
+
+function restartPopAnimations(el) {
+  // pop 클래스가 없으면 처음 한 번 붙여 애니메이션을 활성화한다.
+  if (!el.classList.contains("pop")) {
+    el.classList.add("pop");
+    return;
+  }
+  let restarted = false;
+  for (const a of el.getAnimations()) {
+    if (POP_ANIM_NAMES.has(a.animationName)) {
+      a.cancel();
+      a.play();
+      restarted = true;
+    }
+  }
+  // 매칭 애니메이션이 없는 희귀 경로(구형 WebKit 등)는 클래스 토글로 폴백.
+  if (!restarted) {
+    el.classList.remove("pop");
+    el.classList.add("pop");
+  }
+}
+
 function popText() {
   if (screamTiltOn) setRandomTilt(); // 쌰갈 피버 중엔 팝마다 기울기를 새로 뽑는다
-  bubbleText.classList.remove("pop");
-  bubbleEl.classList.remove("pop");
-  void bubbleText.offsetWidth; // reflow 강제 → 연타 시에도 매번 재생
-  bubbleText.classList.add("pop");
-  bubbleEl.classList.add("pop");
+  restartPopAnimations(bubbleText);
+  restartPopAnimations(bubbleEl);
 }
 
 // ===== 설정 입력 컨트롤 =====

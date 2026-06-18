@@ -1,56 +1,36 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createPlayer } from "../src/player.js";
-
-// 가짜 Audio 팩토리 (player.test.js 와 동일한 최소 구현).
-function makeFakeAudioFactory() {
-  const created = [];
-  function factory(src) {
-    const listeners = {};
-    const audio = {
-      src,
-      played: false,
-      paused: false,
-      currentTime: 0,
-      duration: NaN,
-      addEventListener(ev, cb) {
-        (listeners[ev] ||= []).push(cb);
-      },
-      play() {
-        this.played = true;
-      },
-      pause() {
-        this.paused = true;
-      },
-    };
-    created.push(audio);
-    return audio;
-  }
-  factory.created = created;
-  return factory;
-}
+import { makeFakeEngine } from "./fake-engine.js";
 
 test("setSrc: 음원 경로를 교체하면 다음 재생부터 적용된다", () => {
-  const makeAudio = makeFakeAudioFactory();
-  const player = createPlayer({ makeAudio });
+  const engine = makeFakeEngine();
+  const player = createPlayer({ engine });
   player.setSrc("data:audio/mp3;base64,AAA");
   player.playOnce();
-  assert.equal(makeAudio.created[0].src, "data:audio/mp3;base64,AAA");
+  assert.equal(engine.handles[0].src, "data:audio/mp3;base64,AAA");
 });
 
 test("setSrc(null): 기본 음원 경로로 되돌린다", () => {
-  const makeAudio = makeFakeAudioFactory();
-  const player = createPlayer({ src: "data:x", makeAudio });
+  const engine = makeFakeEngine();
+  const player = createPlayer({ src: "data:x", engine });
   player.setSrc(null);
   player.playOnce();
-  assert.equal(makeAudio.created[0].src, "/assets/ssyagal.m4a");
+  assert.equal(engine.handles[0].src, "/assets/ssyagal.m4a");
+});
+
+test("setSrc: 음원 경로를 교체할 때 엔진에 prefetch 를 건다", () => {
+  const engine = makeFakeEngine();
+  const player = createPlayer({ engine });
+  player.setSrc("data:audio/mp3;base64,BBB");
+  assert.ok(engine.loadBufferCalls.includes("data:audio/mp3;base64,BBB"));
 });
 
 test("setGap: 변경한 간격이 다음 클립 예약 시점에 반영된다", () => {
-  const makeAudio = makeFakeAudioFactory();
+  const engine = makeFakeEngine();
   const delays = [];
   const player = createPlayer({
-    makeAudio,
+    engine,
     clipMs: 1000, // 클립 길이 주입
     setTimeout: (_cb, ms) => delays.push(ms), // 예약만 기록(실행 안 함)
   });
@@ -61,10 +41,10 @@ test("setGap: 변경한 간격이 다음 클립 예약 시점에 반영된다", 
 });
 
 test("setGap: 유효하지 않은 값은 무시한다", () => {
-  const makeAudio = makeFakeAudioFactory();
+  const engine = makeFakeEngine();
   const delays = [];
   const player = createPlayer({
-    makeAudio,
+    engine,
     gapMs: -200,
     clipMs: 1000,
     setTimeout: (_cb, ms) => delays.push(ms),
